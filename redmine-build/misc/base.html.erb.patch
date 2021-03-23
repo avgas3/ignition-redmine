@@ -1,0 +1,19 @@
+--- base.html.erb.orig
++++ redmine-misc/base.html.erb
+@@ -86,7 +86,10 @@
+     </div>
+     <% end %>
+ 
+-    <h1><%= page_header_title %></h1>
++    <div id="logo">
++    <img src="<%= Redmine::Utils.relative_url_root %>/images/logo.png" />
++    <div><%= page_header_title %></div>
++    </div>
+ 
+     <% if display_main_menu?(@project) %>
+     <div id="main-menu" class="tabs">
+@@ -127,3 +130,4 @@
+ <%= call_hook :view_layouts_base_body_bottom %>
+ </body>
+ </html>
++

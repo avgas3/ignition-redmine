@@ -1,0 +1,13 @@
+--- formatter.rb	2018-07-22 16:29:17.548240257 -0500
++++ formatter.rb.new	2018-07-22 16:28:46.020094511 -0500
+@@ -130,7 +130,9 @@
+         def formatter
+           @@formatter ||= Redcarpet::Markdown.new(
+             Redmine::WikiFormatting::Markdown::HTML.new(
+-              :filter_html => true,
++              :filter_html => false,
++              :no_images => true,
++              :no_styles => true,
+               :hard_wrap => true
+             ),
+             :autolink => true,

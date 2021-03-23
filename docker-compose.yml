@@ -1,0 +1,68 @@
+services:
+  gateway:
+    build:
+      context: ignition-build
+    networks:
+      - proxy
+    volumes:
+      - ./gw-init/gateway.gwbk
+      - gateway-data:/var/lib/ignition/data
+    environment:
+      - GATEWAY_ADMIN_PASSWORD=password
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gateway.entrypoints=web"
+      - "traefik.http.routers.gateway.rule=Host(`gateway.vcap.me`)"
+      - "traefik.http.services.gateway.loadbalancer.server.port=8088"
+
+  redmine:
+    build:
+      context: redmine-build
+    # restart: always
+    volumes:
+      - ./redmine-files:/usr/src/redmine/files
+      - ./redmine-plugins:/usr/src/redmine/plugins
+      - ./config/production.rb:/usr/src/redmine/config/environments/production.rb
+      - ./config/environment.rb:/usr/src/redmine/config/environment.rb
+      - ./config/config.ru:/usr/src/redmine/config.ru
+    networks:
+      - db
+      - proxy
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.redmine.entrypoints=web"
+      - "traefik.http.routers.redmine.rule=Host(`gateway.vcap.me`) && PathPrefix(`/redmine/`)"
+      - "traefik.http.services.redmine.loadbalancer.server.port=3000"
+    env_file:
+      - ./secrets/redmine.env
+
+  db:
+    build:
+      context: db-build
+    # restart: always
+    networks:
+      - db
+    volumes:
+      - db-data:/var/lib/mysql
+      - ./secrets/extra.cnf:/root/.my.cnf
+      - ./db-init:/docker-entrypoint-initdb.d
+      - ./db-backups:/backups
+    env_file:
+      - ./secrets/db.env
+    environment:
+      RETAIN_FILES_COUNT: 5
+
+networks:
+  db:
+    external: true
+    name: db
+  proxy:
+    external: true
+    name: proxy
+
+volumes:
+  db-data:
+  gateway-data:
