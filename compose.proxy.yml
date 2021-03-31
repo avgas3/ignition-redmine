@@ -1,0 +1,53 @@
+# Launch with:
+#  $ docker-compose -f stack-proxy.yml -p proxy up -d
+---
+x-log-opts:
+  &log-opts
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "200k"
+      max-file: "10"
+
+services:
+  proxy:
+    <<: *log-opts
+    image: traefik:2.2
+    container_name: proxy
+    restart: unless-stopped
+    env_file:
+      - secrets/dnssecrets.env
+    command:
+      - "--log.level=INFO"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.network=proxy"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.traefik.address=:8080"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.dnschallenge.provider=${DNS_PROVIDER}"
+      - "--certificatesresolvers.myresolver.acme.email=${DNS_EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    networks:
+      proxy:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tls.stores.default.defaultCertificate.certFile=/letsencrypt/certs/fsredmine.duckdns.org.crt"
+      - "traefik.tls.stores.default.defaultCertificate.keyFile=/letsencrypt/private/fsredmine.duckdns.org.key"
+      
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+
+networks:
+  proxy:
+    name: proxy

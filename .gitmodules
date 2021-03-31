@@ -1,0 +1,3 @@
+[submodule "python-redmine"]
+	path = redminelib
+	url = https://github.com/avgas3/python-redmine
